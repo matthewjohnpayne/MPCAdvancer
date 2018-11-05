@@ -35,7 +35,7 @@ import numpy as np
 
 # Import neighboring packages
 # --------------------------------------------------------------
-
+import universal-kepler as U
 
 
 # Class(es) / Routines for advancing orbits
@@ -67,6 +67,9 @@ class ORBIT_ICs:
     '''
 
     # Add some content ...
+    self.iTDB
+    self.ICtype
+    self.ICnumber
 
 
 
@@ -79,10 +82,12 @@ class TARGET_STATES:
     I assume it will contain convenience functions to help reformat, etc
     '''
 
-    def __init__(self,  ):
+    def __init__(self,  States, Partials , ICs):
         '''
-        Intend that this be initialized using output from ADVANCE
-        at grid of times
+        Initialize using output from ADVANCE
+        Use information in ICs to interpret what the format & content ...
+        ... of the States, Partials is. 
+        Use this to create/allow-the-creation-of some nicely formatted data.
         '''
         # Add some content ...
         pass
@@ -159,20 +164,19 @@ class ADVANCE:
 
         # Add assertions to assure contents
         #  - after development-phase, could disable assertions
-        assert hasattr(orbit_ics, 'cartStateArray') # <<-- This might change 
-        assert hasattr(orbit_ics, 'iTDB')
-        assert hasattr(orbit_ics, 'ICtype')
-        # Will require additional attributed in future ...
-
+        assert hasattr(orbit_ics, 'iTDB')       and orbit_ics.iTDB != None
+        assert hasattr(orbit_ics, 'ICtype')     and orbit_ics.ICtype != None
+        assert hasattr(orbit_ics, 'ICnumber')   and orbit_ics.ICnumber != None
+        self.ICs = orbit_ics
 
 
     def twobody(targetTDBs):
         '''
-        Implements universal-kepler-stepper to advance orbit(s)
+        Calls universal-kepler-stepper to advance orbit(s)
         
         Parameters
         ----------
-        targetTDBs       : list of floats
+        targetTDBs       : iterable of floats
             Epochs at which to generate output.
             Length = N_T
         
@@ -188,35 +192,69 @@ class ADVANCE:
         >>> ...
         
         '''
+        # Times to integrate to ...
+        targetTDBs=np.array(targetTDBs) - orbit_ics.iTDB
+        
+        # How to propagate single orbits
+        if self.ICs.ICnumber == 'Single':
     
-        # For nominal-only orbit:
-        # - use universal_stepper with var=tangent=False
-        if orbit_ics.ICtype == "Nominal"        :
-            # Temporary hack.
-            # Using a slower indirect method
-            # Should be replaced by a method that does direct advance of cartesians using f & g
-            #targetTDBs, targetStateArrays = advance_cartesian_states_2body_INDIRECT(cartStateArray, iTDB , targetTDBs)
-            #targetTangent = False
-            fakeOutput = None
-    
-        # For nominal + tangent:
-        # - use universal_stepper with var=tangent=True
-        elif orbit_ics.ICtype == "Tangent"      :
-            fakeOutput = None
-    
-        # For uncertainty-region:
-        # - not sure yet ...
-        elif orbit_ics.ICtype == "Uncertainty"  :
-            fakeOutput = None
+            # If "Nominal", then advance a single nominal orbit
+            # - Use universal_steps with ICtype=tangent=False
+            if self.ICs.ICtype     == "Nominal"        :
+                finalCartStateArray, finalCartPartialArray = \
+                    U.universal_steps(PHYS.GM, targetTDBs, self.ICs.inputCartState, False, timeSteps=False)
+            
+            # If "Partial", then advance a single nominal orbit + partial-derivatives
+            # - Use universal_steps with ICtype=Partial=True
+            elif self.ICs.ICtype   == "Partial"      :
+                finalCartStateArray, finalCartPartialArray = \
+                    U.universal_steps(PHYS.GM, targetTDBs, self.ICs.inputCartState, True, timeSteps=False)
+        
+            # If "Uncertainty", then advance an uncertainty-region
+            # - use universal_multisteps with ICtype=tangent=False
+            #
+            # My working hypothesis is that this is going to be
+            # evaluated/propagated using a "bundle" of orbits
+            # I.e. This will be passed in as an "inputCartStateArray", the same as for any
+            # generic collection of states
+            #
+            # I also assume that the nominal orbit can be embedded/accommodated within
+            # the "uncertainty bundle" 
+            #
+            elif self.ICs.ICtype   == "Uncertainty"  :
+                finalCartStateArray, finalCartPartialArray = \
+                    U.universal_multisteps(PHYS.GM, targetTDBs, self.ICs.inputCartStateArray, False,timeSteps=False)
 
-        # Shouldn't be able to get here ...
-        else:
-            sys.exit("orbit_ics.ICtype of unknown type: $r"%orbit_ics.ICtype)
+            # Shouldn't be able to get here ...
+            else:
+                sys.exit("self.ICs.ICtype of unknown type: $r"%orbit_ics.ICtype)
+
+
+        # How to propagate multiple orbits ...
+        elif self.ICs.ICnumber == 'Multiple':
+            # Nominal-only: use universal_multisteps with ICtype=tangent=False
+            if self.ICs.ICtype     == "Nominal"        :
+                finalCartStateArray, finalCartPartialArray = \
+                    U.universal_multisteps(PHYS.GM, targetTDBs, self.ICs.inputCartStateArray, False, timeSteps=False)
+        
+            # Nominal+Partial
+            elif self.ICs.ICtype   == "Uncertainty"  :
+                finalCartStateArray, finalCartPartialArray = \
+                    U.universal_multisteps(PHYS.GM, targetTDBs, self.ICs.inputCartStateArray, True, timeSteps=False)
+            
+            # Uncertainty region
+            elif self.ICs.ICtype   == "Uncertainty"  :
+                pass
+
+            # Shouldn't be able to get here ...
+            else:
+                sys.exit("self.ICs.ICtype of unknown type: $r"%orbit_ics.ICtype)
+        
+
 
         # Might need to do some work to create the output TARGET_STATES-object
-        targets = TARGET_STATES(fakeOutput)
-        
-        return targets
+        return TARGET_STATES(finalCartStateArray, finalCartPartialArray , orbit_ics)
+
 
 
 
@@ -264,9 +302,7 @@ class ADVANCE:
 
 
         # Might need to do some work to create the output TARGET_STATES-object
-        targets = TARGET_STATES(fakeOutput)
-
-        return targets
+        return TARGET_STATES(fakeOutput)
 
 
 

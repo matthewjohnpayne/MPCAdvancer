@@ -1,12 +1,21 @@
 # /mpcutilities/mpcutilities/universal-kepler.py
 """
-# --------------------------------------------------------------
-# Nov 2018
-# Payne 
-#
-# Use C to do fast universal kepler step (advance cartesian state)
-#
-# --------------------------------------------------------------
+    
+--------------------------------------------------------------
+
+Nov 2018
+
+Payne
+
+
+Use C to do fast universal kepler step (advance cartesian state)
+
+THIS PYTHON WRAPPER OF universal_step IS HEAVILY INCOMPLETE
+
+THE C-CODE UNDERLYING THIS universal_step IS ALSO INCOMPLETE
+
+--------------------------------------------------------------
+
 """
 
 # Import third-party packages
@@ -27,8 +36,6 @@ lib = CDLL(os.path.join(os.path.dirname(__file__), 'universal_step.so'))
 # Define "kepcart" routines
 # --------------------------------------------------------------
 
-
-THIS PYTHON WRAPPER OF universal_step IS HEAVILY INCOMPLETE 
 
 
 def universal_step(GM, dt, inputCartState, evalPartial):
@@ -75,7 +82,7 @@ def universal_step(GM, dt, inputCartState, evalPartial):
                                           0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
     _universal_step          = lib.universal_step
-    _universal_step.argtypes = (c_double, c_double, inputCartState, POINTER(Classes.CartState), c_bool, POINTER(Classes.CartPartial))
+    _universal_step.argtypes = (c_double, c_double, inputCartState, POINTER(Classes.CartState), c_int, POINTER(Classes.CartPartial))
     _universal_step.restype  = None
     
     return_value = _universal_step(GM, dt, inputCartState,
@@ -88,7 +95,7 @@ def universal_step(GM, dt, inputCartState, evalPartial):
 
 
 
-
+'''
 def universal_steps(GM, timeArray, inputCartState, evalPartial, timeSteps=False):
     """
     Version of universal_step that takes a kepler step in universal variables
@@ -285,6 +292,11 @@ def universal_multisteps(GM, timeArray, inputCartStateArray, evalPartial,timeSte
             finalStateArray[i*numS+j],finalPartialArray[i*numS+j] = _[0],_[1]
 
     return finalStateArray, finalPartialArray
+
+
+
+
+'''
 
 
 

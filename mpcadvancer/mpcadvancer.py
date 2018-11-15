@@ -35,7 +35,7 @@ import numpy as np
 
 # Import neighboring packages
 # --------------------------------------------------------------
-import universal-kepler as U
+import universal_kepler as U
 
 
 # Class(es) / Routines for advancing orbits

@@ -35,93 +35,97 @@ extern double machine_epsilon;
 
 /* kepler step in universal variables from Danby (1988) p. 178 */
 
-int universal_step(double gm, double dt, State *s0, State *s, State *vari)
+int universal_step(double gm, double dt, State *s0, State *s, int evalPart, State *vari)
 {
-  double r0, v0s, u, alpha;
-  double zeta, zetapr;
-  double r, x0dx, x0dv, v0dx, v0dv;
-  double r0pr, rpr, upr, alphapr;
-  double dx, dy, dz, dxd, dyd, dzd;
-  double f, fdot, g, gdot;
-  double fpr, fdotpr, gpr, gdotpr;
-  double ss, sspr;
-  double g0, g1, g2, g3, g4, g5;
-  double g1a, g2a, g3a, g1pr, g2pr, g3pr;
-  int flag, kepler();
+    double r0, v0s, u, alpha;
+    double zeta, zetapr;
+    double r, x0dx, x0dv, v0dx, v0dv;
+    double r0pr, rpr, upr, alphapr;
+    double dx, dy, dz, dxd, dyd, dzd;
+    double f, fdot, g, gdot;
+    double fpr, fdotpr, gpr, gdotpr;
+    double ss, sspr;
+    double g0, g1, g2, g3, g4, g5;
+    double g1a, g2a, g3a, g1pr, g2pr, g3pr;
+    int flag, kepler();
 
-  flag = 0;
-  r0 = sqrt(s0->x*s0->x + s0->y*s0->y + s0->z*s0->z);
-  v0s = s0->xd*s0->xd + s0->yd*s0->yd + s0->zd*s0->zd;
-  u = s0->x*s0->xd + s0->y*s0->yd + s0->z*s0->zd;
-  alpha = 2.0*gm/r0 - v0s;
-  zeta = gm - alpha*r0;
+    flag = 0;
+    r0 = sqrt(s0->x*s0->x + s0->y*s0->y + s0->z*s0->z);
+    v0s = s0->xd*s0->xd + s0->yd*s0->yd + s0->zd*s0->zd;
+    u = s0->x*s0->xd + s0->y*s0->yd + s0->z*s0->zd;
+    alpha = 2.0*gm/r0 - v0s;
+    zeta = gm - alpha*r0;
 
-  /* solve kepler's equation : in universal variables */
-  flag = kepler(gm, dt, r0, alpha, u, zeta, &r, &ss, &g0, &g1, &g2, &g3, &g4, &g5);
+    /* solve kepler's equation : in universal variables */
+    flag = kepler(gm, dt, r0, alpha, u, zeta, &r, &ss, &g0, &g1, &g2, &g3, &g4, &g5);
 
-  f = 1.0 - (gm/r0)*g2;
-  g = dt - gm*g3;
-  fdot = - (gm/(r*r0))*g1;
-  /*gdot = 1.0 - (gm/r)*g2;*/
-  gdot = (1.0 + g*fdot)/f;
+    f = 1.0 - (gm/r0)*g2;
+    g = dt - gm*g3;
+    fdot = - (gm/(r*r0))*g1;
+    /*gdot = 1.0 - (gm/r)*g2;*/
+    gdot = (1.0 + g*fdot)/f;
 
-  s->x = f*s0->x + g*s0->xd;
-  s->y = f*s0->y + g*s0->yd;
-  s->z = f*s0->z + g*s0->zd;
-  s->xd = fdot*s0->x + gdot*s0->xd;
-  s->yd = fdot*s0->y + gdot*s0->yd;
-  s->zd = fdot*s0->z + gdot*s0->zd;
-    
-    
-    
-    // MJP ...
-    // Cycle through 
-    
-    
-    // ... MJP
+    s->x = f*s0->x + g*s0->xd;
+    s->y = f*s0->y + g*s0->yd;
+    s->z = f*s0->z + g*s0->zd;
+    s->xd = fdot*s0->x + gdot*s0->xd;
+    s->yd = fdot*s0->y + gdot*s0->yd;
+    s->zd = fdot*s0->z + gdot*s0->zd;
 
-  /* compute the differentials */
-  x0dx = s0->x*vari->x + s0->y*vari->y + s0->z*vari->z;
-  x0dv = s0->x*vari->xd + s0->y*vari->yd + s0->z*vari->zd;
-  v0dx = s0->xd*vari->x + s0->yd*vari->y + s0->zd*vari->z;
-  v0dv = s0->xd*vari->xd + s0->yd*vari->yd + s0->zd*vari->zd;
+    /*
+    THIS LOOP IS INCOMPLETE : MJP 20181115
+    if (evalPart){
+        // MJP ...
+        // If evalPart == True, then evaluate partial derivatives
+        // Cycle through different variation possibilities
+        // ... MJP
 
-  r0pr = x0dx/r0;
-  alphapr = -(2.0*gm/(r0*r0))*r0pr - 2.0*v0dv;
-  upr = x0dv + v0dx;
-  zetapr = -alpha*r0pr - r0*alphapr;
-  
-  g1a = 0.5*(1.0*g3 - ss*g2);
-  g2a = 0.5*(2.0*g4 - ss*g3);
-  g3a = 0.5*(3.0*g5 - ss*g4);
+        // compute the differentials
+        x0dx = s0->x*vari->x + s0->y*vari->y + s0->z*vari->z;
+        x0dv = s0->x*vari->xd + s0->y*vari->yd + s0->z*vari->zd;
+        v0dx = s0->xd*vari->x + s0->yd*vari->y + s0->zd*vari->z;
+        v0dv = s0->xd*vari->xd + s0->yd*vari->yd + s0->zd*vari->zd;
 
-  sspr = -(ss*r0pr + g3*zetapr + g2*upr + (g3a*zeta + u*g2a)*alphapr)/r;
+        r0pr = x0dx/r0;
+        alphapr = -(2.0*gm/(r0*r0))*r0pr - 2.0*v0dv;
+        upr = x0dv + v0dx;
+        zetapr = -alpha*r0pr - r0*alphapr;
 
-  g1pr = g0*sspr + g1a*alphapr;
-  g2pr = g1*sspr + g2a*alphapr;
-  g3pr = g2*sspr + g3a*alphapr;
+        g1a = 0.5*(1.0*g3 - ss*g2);
+        g2a = 0.5*(2.0*g4 - ss*g3);
+        g3a = 0.5*(3.0*g5 - ss*g4);
 
-  rpr = r0pr + g1*upr + g2*zetapr + u*g1pr + zeta*g2pr;
+        sspr = -(ss*r0pr + g3*zetapr + g2*upr + (g3a*zeta + u*g2a)*alphapr)/r;
 
-  fpr = (gm*g2/(r0*r0))*r0pr - (gm/r0)*g2pr;
-  gpr = - gm*g3pr;
-  fdotpr = (gm/(r*r*r0))*g1*rpr + (gm/(r*r0*r0))*g1*r0pr - (gm/(r*r0))*g1pr;
-  gdotpr = (gm/(r*r))*g2*rpr - (gm/r)*g2pr;
-  /* finished computing differentials */
+        g1pr = g0*sspr + g1a*alphapr;
+        g2pr = g1*sspr + g2a*alphapr;
+        g3pr = g2*sspr + g3a*alphapr;
 
-  dx = f*vari->x + g*vari->xd + fpr*s0->x + gpr*s0->xd;
-  dy = f*vari->y + g*vari->yd + fpr*s0->y + gpr*s0->yd;
-  dz = f*vari->z + g*vari->zd + fpr*s0->z + gpr*s0->zd;
-  dxd = fdot*vari->x + gdot*vari->xd + fdotpr*s0->x + gdotpr*s0->xd;
-  dyd = fdot*vari->y + gdot*vari->yd + fdotpr*s0->y + gdotpr*s0->yd;
-  dzd = fdot*vari->z + gdot*vari->zd + fdotpr*s0->z + gdotpr*s0->zd;
-  vari->x = dx;
-  vari->y = dy;
-  vari->z = dz;
-  vari->xd = dxd;
-  vari->yd = dyd;
-  vari->zd = dzd;
-  return(flag);
+        rpr = r0pr + g1*upr + g2*zetapr + u*g1pr + zeta*g2pr;
+
+        fpr = (gm*g2/(r0*r0))*r0pr - (gm/r0)*g2pr;
+        gpr = - gm*g3pr;
+        fdotpr = (gm/(r*r*r0))*g1*rpr + (gm/(r*r0*r0))*g1*r0pr - (gm/(r*r0))*g1pr;
+        gdotpr = (gm/(r*r))*g2*rpr - (gm/r)*g2pr;
+        // finished computing differentials
+
+        dx = f*vari->x + g*vari->xd + fpr*s0->x + gpr*s0->xd;
+        dy = f*vari->y + g*vari->yd + fpr*s0->y + gpr*s0->yd;
+        dz = f*vari->z + g*vari->zd + fpr*s0->z + gpr*s0->zd;
+        dxd = fdot*vari->x + gdot*vari->xd + fdotpr*s0->x + gdotpr*s0->xd;
+        dyd = fdot*vari->y + gdot*vari->yd + fdotpr*s0->y + gdotpr*s0->yd;
+        dzd = fdot*vari->z + gdot*vari->zd + fdotpr*s0->z + gdotpr*s0->zd;
+        
+        vari->x = dx;
+        vari->y = dy;
+        vari->z = dz;
+        vari->xd = dxd;
+        vari->yd = dyd;
+        vari->zd = dzd;
+    }
+    */
+
+    return(flag);
 }
 
 int kepler(gm, dt, r0, alpha, u, zeta, rx, s, g0, g1, g2, g3, g4, g5)

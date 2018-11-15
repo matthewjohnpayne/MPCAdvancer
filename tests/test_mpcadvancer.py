@@ -1,25 +1,35 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# /mpcadvancer/tests/test_mpcadvancer.py
 
-"""Tests for `mpcadvancer` package."""
+"""
+    
+--------------------------------------------------------------
 
-import pytest
+Nov 2018
 
+Payne
 
-from mpcadvancer import mpcadvancer
+Test the classes & functions in the mpcadvancer module
 
+*** MORE TESTS NEED TO BE CREATED ***
 
-@pytest.fixture
-def response():
-    """Sample pytest fixture.
+--------------------------------------------------------------
 
-    See more at: http://doc.pytest.org/en/latest/fixture.html
-    """
-    # import requests
-    # return requests.get('https://github.com/audreyr/cookiecutter-pypackage')
+"""
 
 
-def test_content(response):
-    """Sample pytest test function with the pytest fixture as an argument."""
-    # from bs4 import BeautifulSoup
-    # assert 'GitHub' in BeautifulSoup(response.content).title.string
+# Import third-party packages
+# --------------------------------------------------------------
+import numpy as np
+from pkg_resources import resource_exists, resource_filename
+
+# Importing of local modules/packages required for this test
+# --------------------------------------------------------------
+#import mpcutilities
+
+# Import the specific package/module/function we are testing
+# --------------------------------------------------------------
+import mpcadvancer.mpcadvancer as MPCA
+
+
+# Basic test(s) of advancer
+# ----------------------------------------------------------
